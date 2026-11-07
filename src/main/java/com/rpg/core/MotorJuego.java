@@ -16,6 +16,7 @@ import com.rpg.items.Inventario;
 import com.rpg.items.Pocion;
 import com.rpg.persistencia.EscritorLog;
 import com.rpg.persistencia.GestorArchivos;
+import com.rpg.persistencia.LectorLog;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -42,6 +43,7 @@ public class MotorJuego {
     private final TorneoManager torneo = new TorneoManager(arena, registro);
     private final GestorArchivos archivos = new GestorArchivos();
     private final EscritorLog escritorLog = new EscritorLog();
+    private final LectorLog lectorLog = new LectorLog();
     // TALLER ARCHIVOS: ultimoGuardado es solo el estado de la partida en memoria. Aqui (o en un metodo
     // nuevo como cargarProgreso) iria la carga de una partida guardada en disco; llamala desde Main.
     private volatile String ultimoGuardado = "";
@@ -95,6 +97,11 @@ public class MotorJuego {
         System.out.println(archivos.describir(log));
         System.out.println("-- Con ruta absoluta --");
         System.out.println(archivos.describir(new File(log.getAbsolutePath())));
+    }
+
+    public void verHistorial() {
+        System.out.println("\n=== HISTORIAL DE COMBATES ===");
+        lectorLog.mostrar(archivos.archivoLog());
     }
 
     // ---- creacion de personajes
