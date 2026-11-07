@@ -1,6 +1,7 @@
 package com.rpg.core;
 
 import com.rpg.concurrency.GestorTurno;
+import com.rpg.concurrency.AutoGuardadoDaemon;
 import com.rpg.entities.Enemigo;
 import com.rpg.entities.EstadoEfecto;
 import com.rpg.entities.Gremio;
@@ -22,6 +23,7 @@ public class MotorJuego {
 
     private static final String NOMBRE_GREMIO = "Guardianes del Alba";
     private static final int CURACION_POCION_VIDA = 30;
+    private static final long INTERVALO_AUTOGUARDADO_MS = 5000;
     private static final int SEGUNDOS_TURNO = 10;
 
     private final Consola consola;
@@ -33,7 +35,7 @@ public class MotorJuego {
     private final TorneoManager torneo = new TorneoManager(arena, registro);
     // TALLER ARCHIVOS: ultimoGuardado es solo el estado de la partida en memoria. Aqui (o en un metodo
     // nuevo como cargarProgreso) iria la carga de una partida guardada en disco; llamala desde Main.
-    private String ultimoGuardado = "";
+    private volatile String ultimoGuardado = "";
 
     public MotorJuego(Consola consola) {
         this.consola = consola;
@@ -270,7 +272,7 @@ public class MotorJuego {
      * Guarda las estadisticas en memoria (el texto queda en {@code ultimoGuardado}); aun no se escribe ningun
      * archivo. Hoy solo se invoca al terminar una pelea.
      */
-    public void guardarProgreso() {
+    public synchronized void guardarProgreso() {
         // TALLER ARCHIVOS: ademas de dejar el texto en memoria, escribe la partida en disco (por ejemplo un
         // .txt con BufferedWriter, y/o un .dat serializando el estado con ObjectOutputStream). Usa try-with-resources.
         // TALLER CONCURRENCIA: este guardado es manual. Debera hacerse solo, de fondo, mientras se juega.
@@ -281,11 +283,20 @@ public class MotorJuego {
         contenido.append("Logros: ").append(String.join(", ", perfil.getLogros())).append(System.lineSeparator());
         contenido.append("Gremio ").append(gremio.getNombre()).append(": ")
                 .append(gremio.getMiembros().size()).append(" miembros").append(System.lineSeparator());
+        for (Personaje miembro : gremio.getMiembros()) {
+            contenido.append("  ").append(FormatoCombate.resumen(miembro)).append(System.lineSeparator());
+        }
         contenido.append("Enemigos derrotados: ").append(bestiario.resumenDerrotados()).append(System.lineSeparator());
+
         contenido.append(System.lineSeparator()).append("--- Ultimo combate ---").append(System.lineSeparator());
         contenido.append(registro.getTexto());
         ultimoGuardado = contenido.toString();
         System.out.println("[Progreso guardado en memoria]");
+    }
+    public void iniciarAutoGuardado() {
+        Thread hilo = new Thread(new AutoGuardadoDaemon(INTERVALO_AUTOGUARDADO_MS, this::guardarProgreso), "AutoGuardado");
+        hilo.setDaemon(true);
+        hilo.start();
     }
 
     public String getUltimoGuardado() {
