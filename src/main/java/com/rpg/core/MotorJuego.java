@@ -1,5 +1,6 @@
 package com.rpg.core;
 
+import com.rpg.concurrency.GestorTurno;
 import com.rpg.entities.Enemigo;
 import com.rpg.entities.EstadoEfecto;
 import com.rpg.entities.Gremio;
@@ -21,6 +22,7 @@ public class MotorJuego {
 
     private static final String NOMBRE_GREMIO = "Guardianes del Alba";
     private static final int CURACION_POCION_VIDA = 30;
+    private static final int SEGUNDOS_TURNO = 10;
 
     private final Consola consola;
     private final RegistroCombate registro = new RegistroCombate();
@@ -159,6 +161,7 @@ public class MotorJuego {
                 }
                 case ESPECIAL -> arena.intentarEspecial(jugador, enemigo);
                 case POCION -> usarPocion(jugador);
+                case TIEMPO_AGOTADO -> true;
                 default -> {
                     mostrarEstado(jugador);
                     yield false;
@@ -175,7 +178,16 @@ public class MotorJuego {
         // TALLER CONCURRENCIA: esta lectura bloquea el programa sin limite de tiempo.
         // Aqui debe entrar el temporizador de turno con su callback.
         System.out.println("1. Atacar  2. Habilidad especial  3. Usar pocion  4. Ver estado  0. Huir");
+
+        GestorTurno gestor = new GestorTurno();
+        gestor.iniciar(SEGUNDOS_TURNO,
+                () -> System.out.println("\nTiempo agotado! Pierdes el turno (pulsa Enter para continuar)."));
+
         int opcion = consola.leerEntero("Accion: ", 0, 4);
+
+        if (!gestor.cancelar()) {
+            return Accion.TIEMPO_AGOTADO;
+        }
         return switch (opcion) {
             case 1 -> Accion.ATACAR;
             case 2 -> Accion.ESPECIAL;
