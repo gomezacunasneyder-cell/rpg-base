@@ -14,7 +14,9 @@ import com.rpg.entities.enums.TipoEfecto;
 import com.rpg.exceptions.CapacidadExcedidaException;
 import com.rpg.items.Inventario;
 import com.rpg.items.Pocion;
+import com.rpg.persistencia.GestorArchivos;
 
+import java.io.File;
 import java.util.List;
 import java.util.Random;
 
@@ -33,6 +35,7 @@ public class MotorJuego {
     private final PerfilJugador perfil = new PerfilJugador();
     private final Gremio gremio = new Gremio(NOMBRE_GREMIO);
     private final TorneoManager torneo = new TorneoManager(arena, registro);
+    private final GestorArchivos archivos = new GestorArchivos();
     // TALLER ARCHIVOS: ultimoGuardado es solo el estado de la partida en memoria. Aqui (o en un metodo
     // nuevo como cargarProgreso) iria la carga de una partida guardada en disco; llamala desde Main.
     private volatile String ultimoGuardado = "";
@@ -70,6 +73,20 @@ public class MotorJuego {
         System.out.print(bestiario.describir());
         System.out.printf("Victorias: %d | Derrotas: %d | Logros: %s%n",
                 perfil.getVictorias(), perfil.getDerrotas(), perfil.getLogros());
+    }
+
+    public void mostrarInfoArchivos() {
+        System.out.println("\n=== ARCHIVOS DE PARTIDA ===");
+        if (!archivos.asegurarCarpeta()) {
+            System.out.println("No se pudo crear la carpeta " + GestorArchivos.CARPETA_PARTIDAS);
+            return;
+        }
+        File log = archivos.archivoLog();
+        archivos.crearSiNoExiste(log);
+        System.out.println("-- Con ruta relativa --");
+        System.out.println(archivos.describir(log));
+        System.out.println("-- Con ruta absoluta --");
+        System.out.println(archivos.describir(new File(log.getAbsolutePath())));
     }
 
     // ---- creacion de personajes
