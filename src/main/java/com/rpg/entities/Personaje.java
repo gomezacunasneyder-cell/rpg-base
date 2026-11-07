@@ -1,5 +1,6 @@
 package com.rpg.entities;
 
+import com.rpg.concurrency.EfectoContinuoTask;
 import com.rpg.entities.enums.EstadoPersonaje;
 import com.rpg.entities.enums.TipoPersonaje;
 import com.rpg.exceptions.SinManaException;
@@ -10,11 +11,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 // TALLER ARCHIVOS: para guardar la partida con ObjectOutputStream, Personaje debe volverse Serializable
 // (con serialVersionUID). Piensa que campos son transient y que clases anidadas (Inventario, Pocion, Arma,
@@ -28,6 +30,7 @@ public abstract class Personaje implements ICombatiente {
     private static final int CAPACIDAD_INVENTARIO = 3;
     private static final int DANIO_MINIMO = 1;
     private static final double PORCENTAJE_TOTAL = 100.0;
+    private static final long INTERVALO_EFECTO_MS = 2000;
 
     private String nombre;
     private final TipoPersonaje tipo;
@@ -42,6 +45,8 @@ public abstract class Personaje implements ICombatiente {
     private final Inventario<Pocion> inventario = new Inventario<>(CAPACIDAD_INVENTARIO); // composicion
     private final Set<String> habilidades = new HashSet<>();
     private final Map<String, EstadoEfecto> efectos = new LinkedHashMap<>();
+    private final Map<String, Thread> hilosEfectos = new ConcurrentHashMap<>();
+    private volatile Consumer<String> oyenteEfectos = System.out::println;
 
     protected Personaje(String nombre, TipoPersonaje tipo) {
         this(nombre, tipo, VIDA_BASE, ATAQUE_BASE, DEFENSA_BASE);
@@ -119,7 +124,7 @@ public abstract class Personaje implements ICombatiente {
     }
 
     public void restaurarVida() {
-        efectos.clear();
+        cancelarEfectos();
         estado = EstadoPersonaje.VIVO;
         vida = vidaMaxima;
     }
@@ -129,16 +134,33 @@ public abstract class Personaje implements ICombatiente {
         return estado != EstadoPersonaje.MUERTO;
     }
 
-    // ---- efectos DoT / HoT (hoy se procesan por turno, de forma secuencial)
+    // ---- efectos DoT / HoT (cada efecto corre en su propio hilo y se cancela con interrupt)
+
+    public void setOyenteEfectos(Consumer<String> oyente) {
+        this.oyenteEfectos = oyente;
+    }
 
     public void aplicarEfecto(EstadoEfecto efecto) {
-        efectos.put(efecto.getNombre(), efecto.copia());
-        if (efecto.esDanio() && estado == EstadoPersonaje.VIVO) {
+        EstadoEfecto activo = efecto.copia();
+        Thread anterior = hilosEfectos.remove(activo.getNombre());
+        if (anterior != null) {
+            anterior.interrupt();
+        }
+        efectos.put(activo.getNombre(), activo);
+        if (activo.esDanio() && estado == EstadoPersonaje.VIVO) {
             estado = EstadoPersonaje.ENVENENADO;
         }
+        Thread hilo = new Thread(new EfectoContinuoTask(this, activo, INTERVALO_EFECTO_MS),
+                "Efecto-" + activo.getNombre() + "-" + nombre);
+        hilosEfectos.put(activo.getNombre(), hilo);
+        hilo.start();
     }
 
     public boolean quitarEfecto(String nombreEfecto) {
+        Thread hilo = hilosEfectos.remove(nombreEfecto);
+        if (hilo != null) {
+            hilo.interrupt();
+        }
         if (efectos.remove(nombreEfecto) == null) {
             return false;
         }
@@ -148,35 +170,53 @@ public abstract class Personaje implements ICombatiente {
 
     public void quitarEfectosDanio() {
         for (String nombreEfecto : new ArrayList<>(efectos.keySet())) {
-            if (efectos.get(nombreEfecto).esDanio()) {
+            EstadoEfecto efecto = efectos.get(nombreEfecto);
+            if (efecto != null && efecto.esDanio()) {
                 quitarEfecto(nombreEfecto);
             }
         }
     }
 
-    /**
-     * Aplica un tick de cada efecto activo.
-     * @return mensajes para el registro de combate
-     */
-    public List<String> procesarEfectos() {
-        // TALLER CONCURRENCIA: cada efecto se procesa aqui, turno a turno. Piensa que pasaria
-        // si cada uno corriera por su cuenta y hubiera que cancelarlo a mitad de camino.
-        List<String> mensajes = new ArrayList<>();
-        Iterator<EstadoEfecto> iterador = efectos.values().iterator();
-        while (iterador.hasNext()) {
-            EstadoEfecto efecto = iterador.next();
-            mensajes.add(aplicarTick(efecto));
-            efecto.consumirTurno();
-            if (efecto.haTerminado()) {
-                iterador.remove();
-                mensajes.add(nombre + ": termina " + efecto.getNombre());
-            }
-            if (!estaVivo()) {
-                break;
+    /** Interrumpe todos los hilos de efecto y deja al personaje sin efectos (fin de combate). */
+    public void cancelarEfectos() {
+        for (String nombreEfecto : new ArrayList<>(hilosEfectos.keySet())) {
+            Thread hilo = hilosEfectos.remove(nombreEfecto);
+            if (hilo != null) {
+                hilo.interrupt();
             }
         }
+        efectos.clear();
         normalizarEstado();
-        return mensajes;
+    }
+
+    /**
+     * Un tick de un efecto, llamado desde su hilo.
+     * @return true si el efecto sigue activo y el hilo debe continuar
+     */
+    public boolean aplicarTickEfecto(EstadoEfecto efecto) {
+        if (efectos.get(efecto.getNombre()) != efecto || !estaVivo()) {
+            limpiarEfecto(efecto);
+            return false;
+        }
+        oyenteEfectos.accept(aplicarTick(efecto));
+        efecto.consumirTurno();
+        if (efecto.haTerminado()) {
+            limpiarEfecto(efecto);
+            oyenteEfectos.accept(nombre + ": termina " + efecto.getNombre());
+            return false;
+        }
+        if (!estaVivo()) {
+            limpiarEfecto(efecto);
+            return false;
+        }
+        return true;
+    }
+
+    /** Retira el efecto solo si sigue siendo la misma instancia (no pisa uno reaplicado). */
+    public void limpiarEfecto(EstadoEfecto efecto) {
+        efectos.remove(efecto.getNombre(), efecto);
+        hilosEfectos.remove(efecto.getNombre(), Thread.currentThread());
+        normalizarEstado();
     }
 
     private String aplicarTick(EstadoEfecto efecto) {

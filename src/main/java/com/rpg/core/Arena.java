@@ -25,10 +25,8 @@ public class Arena {
 
     /** Procesa efectos y aturdimiento. @return true si el personaje puede actuar este turno */
     public boolean iniciarTurno(Personaje personaje) {
+        personaje.setOyenteEfectos(registro::agregar);
         personaje.alIniciarTurno();
-        for (String mensaje : personaje.procesarEfectos()) {
-            registro.agregar(mensaje);
-        }
         if (!personaje.estaVivo()) {
             registro.agregar("%s cae derrotado por sus efectos", personaje.getNombre());
             return false;
@@ -53,6 +51,8 @@ public class Arena {
 
     /** @return true si el especial se ejecuto; false si fallo por falta de mana o de vida */
     public boolean intentarEspecial(Personaje atacante, Personaje defensor) {
+        atacante.setOyenteEfectos(registro::agregar);
+        defensor.setOyenteEfectos(registro::agregar);
         try {
             registro.agregar(atacante.realizarAtaqueEspecial(defensor));
             registro.agregar("   %s", FormatoCombate.resumen(defensor));
@@ -82,6 +82,8 @@ public class Arena {
             turnoAutomatico(a, b);
             turnoAutomatico(b, a);
         }
+        a.cancelarEfectos();
+        b.cancelarEfectos();
         return a.getVida() >= b.getVida() ? a : b;
     }
 }

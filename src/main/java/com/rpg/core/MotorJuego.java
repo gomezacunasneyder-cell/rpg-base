@@ -48,6 +48,8 @@ public class MotorJuego {
         registro.agregar("%n=== %s vs %s ===", jugador.getNombre(), enemigo.getNombre());
 
         boolean huyo = combatir(jugador, enemigo);
+        jugador.cancelarEfectos();
+        enemigo.cancelarEfectos();
 
         cerrarCombate(jugador, enemigo, huyo);
         guardarProgreso();
