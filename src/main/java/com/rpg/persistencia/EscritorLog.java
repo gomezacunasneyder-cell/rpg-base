@@ -19,7 +19,7 @@ public class EscritorLog {
             escritor.flush();
             return true;
         } catch (FileNotFoundException e) {
-            System.out.println("No se pudo abrir " + archivo.getPath() + " (revisa que la carpeta exista): " + e.getMessage());
+            System.out.println("No se pudo abrir " + archivo.getPath() + " para escribir (la carpeta no existe, es un directorio o no hay permisos): " + e.getMessage());
         } catch (IOException e) {
             System.out.println("Error al escribir " + archivo.getPath() + ": " + e.getMessage());
         }
