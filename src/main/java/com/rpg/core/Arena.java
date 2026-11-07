@@ -14,6 +14,7 @@ public class Arena {
     private static final int VARIACION_DANIO = 3;
     private static final int PROBABILIDAD_ESPECIAL_IA = 35;
     private static final int MAXIMO_RONDAS = 40;
+    private static final long PAUSA_RONDA_MS = 400;
 
     private final RegistroCombate registro;
     private final Random azar;
@@ -81,6 +82,12 @@ public class Arena {
             registro.agregar("-- Ronda %d --", ronda);
             turnoAutomatico(a, b);
             turnoAutomatico(b, a);
+            try {
+                Thread.sleep(PAUSA_RONDA_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
         a.cancelarEfectos();
         b.cancelarEfectos();
