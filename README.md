@@ -127,45 +127,45 @@ Mas abajo hay un checklist aparte para el taller de archivos.
 
 ### Seccion 1: Temporizador de turno (`Thread`, `Runnable`, `sleep`)
 
-- [ ] Crear la interfaz `TurnoCallback` con el metodo `void onTiempoAgotado()`.
-- [ ] Crear `TemporizadorTurnoTask` que implemente `Runnable` y reciba por constructor la duracion en segundos y el `TurnoCallback`.
-- [ ] En `run()`, hacer una cuenta regresiva con un `for` o `while` decreciente, un segundo por iteracion.
-- [ ] Usar `Thread.sleep(1000)` dentro de un `try-catch` que capture `InterruptedException`.
-- [ ] Al llegar a 0, llamar a `callback.onTiempoAgotado()`.
-- [ ] Crear `GestorTurno`, que cree el `Thread` con el `Runnable` (o con una lambda) y llame a `.start()`.
-- [ ] Integrarlo en `MotorJuego.pedirAccion`: si el tiempo se agota antes de que el jugador elija, el turno se pierde.
-- [ ] Si el jugador responde a tiempo, cancelar el temporizador con `.interrupt()` (sin banderas booleanas manuales).
+- [x] Crear la interfaz `TurnoCallback` con el metodo `void onTiempoAgotado()`.
+- [x] Crear `TemporizadorTurnoTask` que implemente `Runnable` y reciba por constructor la duracion en segundos y el `TurnoCallback`.
+- [x] En `run()`, hacer una cuenta regresiva con un `for` o `while` decreciente, un segundo por iteracion.
+- [x] Usar `Thread.sleep(1000)` dentro de un `try-catch` que capture `InterruptedException`.
+- [x] Al llegar a 0, llamar a `callback.onTiempoAgotado()`.
+- [x] Crear `GestorTurno`, que cree el `Thread` con el `Runnable` (o con una lambda) y llame a `.start()`.
+- [x] Integrarlo en `MotorJuego.pedirAccion`: si el tiempo se agota antes de que el jugador elija, el turno se pierde.
+- [x] Si el jugador responde a tiempo, cancelar el temporizador con `.interrupt()` (sin banderas booleanas manuales).
 
 ### Seccion 2: Efectos continuos DoT / HoT (`interrupt`, `InterruptedException`)
 
-- [ ] Crear `EfectoContinuoTask` (`Runnable`) con nombre del efecto e intervalo en milisegundos.
-- [ ] En `run()`, usar `while (!Thread.currentThread().isInterrupted())` y aplicar el dano o la curacion sobre el `Personaje`.
-- [ ] En el `catch (InterruptedException e)`: limpiar el estado del personaje, llamar a `Thread.currentThread().interrupt()` y salir del bucle con `break`.
-- [ ] Cada efecto corre en su propio hilo; no se usa `Thread.stop()` ni banderas booleanas.
-- [ ] Reemplazar la logica por turnos de `Personaje.procesarEfectos` por hilos que se cancelan con `.interrupt()`.
-- [ ] Al usar un antidoto, al recibir una purificacion o al terminar el combate, el hilo del efecto se interrumpe y termina limpio.
+- [x] Crear `EfectoContinuoTask` (`Runnable`) con nombre del efecto e intervalo en milisegundos.
+- [x] En `run()`, usar `while (!Thread.currentThread().isInterrupted())` y aplicar el dano o la curacion sobre el `Personaje`.
+- [x] En el `catch (InterruptedException e)`: limpiar el estado del personaje, llamar a `Thread.currentThread().interrupt()` y salir del bucle con `break`.
+- [x] Cada efecto corre en su propio hilo; no se usa `Thread.stop()` ni banderas booleanas.
+- [x] Reemplazar la logica por turnos de `Personaje.procesarEfectos` por hilos que se cancelan con `.interrupt()`.
+- [x] Al usar un antidoto, al recibir una purificacion o al terminar el combate, el hilo del efecto se interrumpe y termina limpio.
 
 ### Seccion 3: Torneo en paralelo (`join`)
 
-- [ ] En `TorneoManager.jugarTorneo`, crear dos `Thread`, uno por semifinal, cada uno con su `Runnable`.
-- [ ] Llamar a `.start()` en ambos para que corran al mismo tiempo.
-- [ ] En el hilo principal, llamar a `.join()` sobre la semifinal A y luego sobre la B.
-- [ ] Proteger los `join()` con `try-catch` de `InterruptedException`.
-- [ ] Consultar los ganadores **solo despues** de que ambos `join()` hayan retornado, y entonces lanzar la final.
-- [ ] Imprimir `Thread.getState()` de cada semifinal antes de `start()`, durante la ejecucion y despues del `join()`, y relacionar lo que ves con el ciclo de vida del hilo (`NEW`, `RUNNABLE`, `TIMED_WAITING`, `TERMINATED`).
+- [x] En `TorneoManager.jugarTorneo`, crear dos `Thread`, uno por semifinal, cada uno con su `Runnable`.
+- [x] Llamar a `.start()` en ambos para que corran al mismo tiempo.
+- [x] En el hilo principal, llamar a `.join()` sobre la semifinal A y luego sobre la B.
+- [x] Proteger los `join()` con `try-catch` de `InterruptedException`.
+- [x] Consultar los ganadores **solo despues** de que ambos `join()` hayan retornado, y entonces lanzar la final.
+- [x] Imprimir `Thread.getState()` de cada semifinal antes de `start()`, durante la ejecucion y despues del `join()`, y relacionar lo que ves con el ciclo de vida del hilo (`NEW`, `RUNNABLE`, `TIMED_WAITING`, `TERMINATED`).
 
 ### Seccion 4: Auto-guardado en segundo plano (hilo daemon)
 
-- [ ] Crear `AutoGuardadoDaemon` con un bucle `while (true)` y `Thread.sleep(intervalo)` entre guardados.
-- [ ] Hacer que el guardado registre periodicamente las estadisticas de los personajes y el historial de la partida **en memoria** (por ejemplo, un `String` o una lista con la ultima copia). No uses archivos todavia.
-- [ ] Llamar a `setDaemon(true)` **antes** de `.start()` (si no, `IllegalThreadStateException`).
-- [ ] Comprobar que la aplicacion cierra de inmediato al salir, sin esperar al hilo de guardado.
+- [x] Crear `AutoGuardadoDaemon` con un bucle `while (true)` y `Thread.sleep(intervalo)` entre guardados.
+- [x] Hacer que el guardado registre periodicamente las estadisticas de los personajes y el historial de la partida **en memoria** (por ejemplo, un `String` o una lista con la ultima copia). No uses archivos todavia.
+- [x] Llamar a `setDaemon(true)` **antes** de `.start()` (si no, `IllegalThreadStateException`).
+- [x] Comprobar que la aplicacion cierra de inmediato al salir, sin esperar al hilo de guardado.
 
 ### Seccion 5: Reto integrador
 
-- [ ] Los cuatro modulos funcionan juntos: temporizador de turno, efectos DoT/HoT, torneo con `join` y auto-guardado daemon.
-- [ ] Cumples la estructura esperada: `com.rpg.core` (`MotorJuego`, `TorneoManager`, `TurnoCallback`), `com.rpg.entities` (`Personaje`, `EstadoEfecto`), `com.rpg.concurrency` (`TemporizadorTurnoTask`, `EfectoContinuoTask`, `AutoGuardadoDaemon`) y `Main`.
-- [ ] El combate y el torneo se juegan completos, sin bloqueos ni excepciones sin controlar.
+- [x] Los cuatro modulos funcionan juntos: temporizador de turno, efectos DoT/HoT, torneo con `join` y auto-guardado daemon.
+- [x] Cumples la estructura esperada: `com.rpg.core` (`MotorJuego`, `TorneoManager`, `TurnoCallback`), `com.rpg.entities` (`Personaje`, `EstadoEfecto`), `com.rpg.concurrency` (`TemporizadorTurnoTask`, `EfectoContinuoTask`, `AutoGuardadoDaemon`) y `Main`.
+- [x] El combate y el torneo se juegan completos, sin bloqueos ni excepciones sin controlar.
 
 ### Seccion 6: Depuracion y condiciones de carrera
 
