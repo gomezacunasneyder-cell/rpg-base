@@ -16,7 +16,9 @@ import com.rpg.items.Inventario;
 import com.rpg.items.Pocion;
 import com.rpg.persistencia.EscritorLog;
 import com.rpg.persistencia.GestorArchivos;
+import com.rpg.persistencia.GestorPartida;
 import com.rpg.persistencia.LectorLog;
+import com.rpg.persistencia.PartidaGuardada;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -38,12 +40,13 @@ public class MotorJuego {
     private final RegistroCombate registro = new RegistroCombate();
     private final Arena arena = new Arena(registro, new Random());
     private final Bestiario bestiario = new Bestiario();
-    private final PerfilJugador perfil = new PerfilJugador();
-    private final Gremio gremio = new Gremio(NOMBRE_GREMIO);
+    private PerfilJugador perfil = new PerfilJugador();
+    private Gremio gremio = new Gremio(NOMBRE_GREMIO);
     private final TorneoManager torneo = new TorneoManager(arena, registro);
     private final GestorArchivos archivos = new GestorArchivos();
     private final EscritorLog escritorLog = new EscritorLog();
     private final LectorLog lectorLog = new LectorLog();
+    private final GestorPartida gestorPartida = new GestorPartida();
     // TALLER ARCHIVOS: ultimoGuardado es solo el estado de la partida en memoria. Aqui (o en un metodo
     // nuevo como cargarProgreso) iria la carga de una partida guardada en disco; llamala desde Main.
     private volatile String ultimoGuardado = "";
@@ -67,6 +70,7 @@ public class MotorJuego {
         cerrarCombate(jugador, enemigo, huyo);
         guardarProgreso();
         guardarLogCombate();
+        guardarPartidaEnDisco();
     }
 
     public void jugarTorneo() {
@@ -76,6 +80,7 @@ public class MotorJuego {
         perfil.desbloquearLogro("Campeon del Torneo");
         guardarProgreso();
         guardarLogCombate();
+        guardarPartidaEnDisco();
     }
 
     public void mostrarBestiario() {
@@ -103,6 +108,7 @@ public class MotorJuego {
         System.out.println("\n=== HISTORIAL DE COMBATES ===");
         lectorLog.mostrar(archivos.archivoLog());
     }
+
     public void borrarPartidaGuardada() {
         System.out.println("\n=== BORRAR PARTIDA GUARDADA ===");
         File[] guardados = {archivos.archivoLog(), archivos.archivoPartida()};
@@ -125,6 +131,27 @@ public class MotorJuego {
         for (File archivo : guardados) {
             archivos.borrarSiExiste(archivo);
         }
+    }
+
+    public synchronized void cargarPartida() {
+        System.out.println("\n=== CARGAR PARTIDA ===");
+        PartidaGuardada partida = gestorPartida.cargar(archivos.archivoPartida());
+        if (partida == null) {
+            return;
+        }
+        gremio = partida.getGremio();
+        perfil = partida.getPerfil();
+        bestiario.restaurarDerrotados(partida.getDerrotados());
+        System.out.println("Partida guardada el " + partida.getFecha().format(FORMATO_FECHA));
+        System.out.printf("Victorias: %d | Derrotas: %d | Logros: %s%n",
+                perfil.getVictorias(), perfil.getDerrotas(), perfil.getLogros());
+        System.out.printf("Gremio %s (%d miembros):%n", gremio.getNombre(), gremio.getMiembros().size());
+        for (Personaje miembro : gremio.getMiembros()) {
+            boolean relacionado = miembro.getGremio() == gremio;
+            System.out.printf("  %s | Pociones: %d | Gremio enlazado: %s%n", FormatoCombate.resumen(miembro),
+                    miembro.getInventario().tamanio(), relacionado ? "si" : "no");
+        }
+        System.out.println("Enemigos derrotados: " + bestiario.resumenDerrotados());
     }
 
     // ---- creacion de personajes
@@ -322,6 +349,7 @@ public class MotorJuego {
     }
 
     // ---- guardado
+
     private void guardarLogCombate() {
         if (!archivos.asegurarCarpeta()) {
             System.out.println("No se pudo crear la carpeta " + GestorArchivos.CARPETA_PARTIDAS);
@@ -331,6 +359,18 @@ public class MotorJuego {
         String encabezado = "=== Registro guardado el " + LocalDateTime.now().format(FORMATO_FECHA) + " ===";
         if (escritorLog.escribir(log, encabezado, registro.getTexto(), AGREGAR_AL_LOG)) {
             System.out.println("[Log de combate guardado en " + log.getPath() + " - " + log.length() + " bytes]");
+        }
+    }
+
+    private synchronized void guardarPartidaEnDisco() {
+        if (!archivos.asegurarCarpeta()) {
+            System.out.println("No se pudo crear la carpeta " + GestorArchivos.CARPETA_PARTIDAS);
+            return;
+        }
+        File archivo = archivos.archivoPartida();
+        PartidaGuardada partida = new PartidaGuardada(gremio, perfil, bestiario.getDerrotados());
+        if (gestorPartida.guardar(archivo, partida)) {
+            System.out.println("[Partida guardada en " + archivo.getPath() + " - " + archivo.length() + " bytes]");
         }
     }
 

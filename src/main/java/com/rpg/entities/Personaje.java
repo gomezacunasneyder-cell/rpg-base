@@ -7,6 +7,9 @@ import com.rpg.exceptions.SinManaException;
 import com.rpg.items.Inventario;
 import com.rpg.items.Pocion;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,7 +25,9 @@ import java.util.function.Consumer;
 // (con serialVersionUID). Piensa que campos son transient y que clases anidadas (Inventario, Pocion, Arma,
 // Gremio, EstadoEfecto, enums) tambien deben ser Serializable, o tendras NotSerializableException.
 // Ojo: Gremio y Personaje se referencian entre si (la serializacion maneja el ciclo).
-public abstract class Personaje implements ICombatiente {
+public abstract class Personaje implements ICombatiente, Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private static final int VIDA_BASE = 100;
     private static final int ATAQUE_BASE = 10;
@@ -44,9 +49,9 @@ public abstract class Personaje implements ICombatiente {
     private Gremio gremio;              // asociacion bidireccional 0..1
     private final Inventario<Pocion> inventario = new Inventario<>(CAPACIDAD_INVENTARIO); // composicion
     private final Set<String> habilidades = new HashSet<>();
-    private final Map<String, EstadoEfecto> efectos = new LinkedHashMap<>();
-    private final Map<String, Thread> hilosEfectos = new ConcurrentHashMap<>();
-    private volatile Consumer<String> oyenteEfectos = System.out::println;
+    private transient Map<String, EstadoEfecto> efectos = new LinkedHashMap<>();
+    private transient Map<String, Thread> hilosEfectos = new ConcurrentHashMap<>();
+    private transient volatile Consumer<String> oyenteEfectos = System.out::println;
 
     protected Personaje(String nombre, TipoPersonaje tipo) {
         this(nombre, tipo, VIDA_BASE, ATAQUE_BASE, DEFENSA_BASE);
@@ -63,6 +68,14 @@ public abstract class Personaje implements ICombatiente {
         this.vida = vidaMaxima;
         this.ataqueBase = ataqueBase;
         this.defensaBase = defensaBase;
+    }
+
+    private void readObject(ObjectInputStream entrada) throws IOException, ClassNotFoundException {
+        entrada.defaultReadObject();
+        efectos = new LinkedHashMap<>();
+        hilosEfectos = new ConcurrentHashMap<>();
+        oyenteEfectos = System.out::println;
+        normalizarEstado();
     }
 
     private static void validarNombre(String nombre) {
