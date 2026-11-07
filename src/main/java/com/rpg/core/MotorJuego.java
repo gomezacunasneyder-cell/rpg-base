@@ -272,7 +272,7 @@ public class MotorJuego {
      * Guarda las estadisticas en memoria (el texto queda en {@code ultimoGuardado}); aun no se escribe ningun
      * archivo. Hoy solo se invoca al terminar una pelea.
      */
-    public synchronized void guardarProgreso() {
+    public synchronized String guardarProgreso() {
         // TALLER ARCHIVOS: ademas de dejar el texto en memoria, escribe la partida en disco (por ejemplo un
         // .txt con BufferedWriter, y/o un .dat serializando el estado con ObjectOutputStream). Usa try-with-resources.
         // TALLER CONCURRENCIA: este guardado es manual. Debera hacerse solo, de fondo, mientras se juega.
@@ -292,6 +292,7 @@ public class MotorJuego {
         contenido.append(registro.getTexto());
         ultimoGuardado = contenido.toString();
         System.out.println("[Progreso guardado en memoria]");
+        return ultimoGuardado;
     }
     public void iniciarAutoGuardado() {
         Thread hilo = new Thread(new AutoGuardadoDaemon(INTERVALO_AUTOGUARDADO_MS, this::guardarProgreso), "AutoGuardado");

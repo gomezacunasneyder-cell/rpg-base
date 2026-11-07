@@ -1,11 +1,13 @@
 package com.rpg.concurrency;
 
+import java.util.function.Supplier;
+
 public class AutoGuardadoDaemon implements Runnable {
 
     private final long intervaloMs;
-    private final Runnable guardado;
+    private final Supplier<String> guardado;
 
-    public AutoGuardadoDaemon(long intervaloMs, Runnable guardado) {
+    public AutoGuardadoDaemon(long intervaloMs, Supplier<String> guardado) {
         this.intervaloMs = intervaloMs;
         this.guardado = guardado;
     }
@@ -19,7 +21,7 @@ public class AutoGuardadoDaemon implements Runnable {
                 Thread.currentThread().interrupt();
                 return;
             }
-            guardado.run();
+            guardado.get();
         }
     }
 }

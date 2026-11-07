@@ -101,7 +101,7 @@ public abstract class Personaje implements ICombatiente {
 
     // ---- vida
 
-    public void recibirDanio(int cantidad) {
+    public synchronized void recibirDanio(int cantidad) {
         if (cantidad < 0) {
             throw new IllegalArgumentException("El danio no puede ser negativo");
         }
@@ -111,7 +111,7 @@ public abstract class Personaje implements ICombatiente {
     }
 
     /** @return vida realmente recuperada */
-    public int curar(int cantidad) {
+    public synchronized int curar(int cantidad) {
         if (cantidad < 0) {
             throw new IllegalArgumentException("La curacion no puede ser negativa");
         }
@@ -123,14 +123,14 @@ public abstract class Personaje implements ICombatiente {
         return vida - vidaAntes;
     }
 
-    public void restaurarVida() {
+    public synchronized void restaurarVida() {
         cancelarEfectos();
         estado = EstadoPersonaje.VIVO;
         vida = vidaMaxima;
     }
 
     @Override
-    public boolean estaVivo() {
+    public synchronized boolean estaVivo() {
         return estado != EstadoPersonaje.MUERTO;
     }
 
@@ -140,7 +140,7 @@ public abstract class Personaje implements ICombatiente {
         this.oyenteEfectos = oyente;
     }
 
-    public void aplicarEfecto(EstadoEfecto efecto) {
+    public synchronized void aplicarEfecto(EstadoEfecto efecto) {
         EstadoEfecto activo = efecto.copia();
         Thread anterior = hilosEfectos.remove(activo.getNombre());
         if (anterior != null) {
@@ -156,7 +156,7 @@ public abstract class Personaje implements ICombatiente {
         hilo.start();
     }
 
-    public boolean quitarEfecto(String nombreEfecto) {
+    public synchronized boolean quitarEfecto(String nombreEfecto) {
         Thread hilo = hilosEfectos.remove(nombreEfecto);
         if (hilo != null) {
             hilo.interrupt();
@@ -168,7 +168,7 @@ public abstract class Personaje implements ICombatiente {
         return true;
     }
 
-    public void quitarEfectosDanio() {
+    public synchronized void quitarEfectosDanio() {
         for (String nombreEfecto : new ArrayList<>(efectos.keySet())) {
             EstadoEfecto efecto = efectos.get(nombreEfecto);
             if (efecto != null && efecto.esDanio()) {
@@ -178,7 +178,7 @@ public abstract class Personaje implements ICombatiente {
     }
 
     /** Interrumpe todos los hilos de efecto y deja al personaje sin efectos (fin de combate). */
-    public void cancelarEfectos() {
+    public synchronized void cancelarEfectos() {
         for (String nombreEfecto : new ArrayList<>(hilosEfectos.keySet())) {
             Thread hilo = hilosEfectos.remove(nombreEfecto);
             if (hilo != null) {
@@ -194,26 +194,33 @@ public abstract class Personaje implements ICombatiente {
      * @return true si el efecto sigue activo y el hilo debe continuar
      */
     public boolean aplicarTickEfecto(EstadoEfecto efecto) {
-        if (efectos.get(efecto.getNombre()) != efecto || !estaVivo()) {
-            limpiarEfecto(efecto);
-            return false;
+        String mensajeTick;
+        String mensajeFin = null;
+        boolean continuar;
+        synchronized (this) {
+            if (efectos.get(efecto.getNombre()) != efecto || !estaVivo()) {
+                limpiarEfecto(efecto);
+                return false;
+            }
+            mensajeTick = aplicarTick(efecto);
+            efecto.consumirTurno();
+            if (efecto.haTerminado()) {
+                mensajeFin = nombre + ": termina " + efecto.getNombre();
+            }
+            continuar = !efecto.haTerminado() && estaVivo();
+            if (!continuar) {
+                limpiarEfecto(efecto);
+            }
         }
-        oyenteEfectos.accept(aplicarTick(efecto));
-        efecto.consumirTurno();
-        if (efecto.haTerminado()) {
-            limpiarEfecto(efecto);
-            oyenteEfectos.accept(nombre + ": termina " + efecto.getNombre());
-            return false;
+        oyenteEfectos.accept(mensajeTick);
+        if (mensajeFin != null) {
+            oyenteEfectos.accept(mensajeFin);
         }
-        if (!estaVivo()) {
-            limpiarEfecto(efecto);
-            return false;
-        }
-        return true;
+        return continuar;
     }
 
     /** Retira el efecto solo si sigue siendo la misma instancia (no pisa uno reaplicado). */
-    public void limpiarEfecto(EstadoEfecto efecto) {
+    public synchronized void limpiarEfecto(EstadoEfecto efecto) {
         efectos.remove(efecto.getNombre(), efecto);
         hilosEfectos.remove(efecto.getNombre(), Thread.currentThread());
         normalizarEstado();
@@ -228,7 +235,7 @@ public abstract class Personaje implements ICombatiente {
         return String.format("%s recupera %d de vida por %s", nombre, curado, efecto.getNombre());
     }
 
-    private boolean tieneEfectoDanio() {
+    private synchronized boolean tieneEfectoDanio() {
         for (EstadoEfecto efecto : efectos.values()) {
             if (efecto.esDanio()) {
                 return true;
@@ -238,7 +245,7 @@ public abstract class Personaje implements ICombatiente {
     }
 
     /** Si ya no queda ningun DoT, un personaje ENVENENADO vuelve a estar VIVO. */
-    private void normalizarEstado() {
+    private synchronized void normalizarEstado() {
         if (estado == EstadoPersonaje.ENVENENADO && !tieneEfectoDanio()) {
             estado = EstadoPersonaje.VIVO;
         }
@@ -246,14 +253,14 @@ public abstract class Personaje implements ICombatiente {
 
     // ---- aturdimiento
 
-    public void aturdir() {
+    public synchronized void aturdir() {
         if (estaVivo()) {
             estado = EstadoPersonaje.ATURDIDO;
         }
     }
 
     /** @return true si estaba aturdido (y por tanto pierde este turno) */
-    public boolean consumirAturdimiento() {
+    public synchronized boolean consumirAturdimiento() {
         boolean estabaAturdido = estado == EstadoPersonaje.ATURDIDO;
         if (estabaAturdido) {
             estado = tieneEfectoDanio() ? EstadoPersonaje.ENVENENADO : EstadoPersonaje.VIVO;
@@ -263,7 +270,7 @@ public abstract class Personaje implements ICombatiente {
 
     // ---- inventario, arma, gremio, habilidades
 
-    public String usarPocion(Pocion pocion) {
+    public synchronized String usarPocion(Pocion pocion) {
         int curado = curar(pocion.getCuracionReal());
         if (pocion.getEfecto() != null) {
             aplicarEfecto(pocion.getEfecto());
@@ -309,7 +316,7 @@ public abstract class Personaje implements ICombatiente {
 
     // ---- getters y setters validados
 
-    public void setVida(int nuevaVida) {
+    public synchronized void setVida(int nuevaVida) {
         vida = Math.max(0, Math.min(nuevaVida, vidaMaxima));
         if (vida == 0) {
             estado = EstadoPersonaje.MUERTO;
@@ -321,7 +328,7 @@ public abstract class Personaje implements ICombatiente {
         this.nombre = nombre;
     }
 
-    public void setVidaMaxima(int vidaMaxima) {
+    public synchronized void setVidaMaxima(int vidaMaxima) {
         if (vidaMaxima <= 0) {
             throw new IllegalArgumentException("La vida maxima debe ser positiva");
         }
@@ -341,15 +348,15 @@ public abstract class Personaje implements ICombatiente {
         return tipo;
     }
 
-    public int getVida() {
+    public synchronized int getVida() {
         return vida;
     }
 
-    public int getVidaMaxima() {
+    public synchronized int getVidaMaxima() {
         return vidaMaxima;
     }
 
-    public EstadoPersonaje getEstado() {
+    public synchronized EstadoPersonaje getEstado() {
         return estado;
     }
 
@@ -369,7 +376,7 @@ public abstract class Personaje implements ICombatiente {
         return Collections.unmodifiableSet(habilidades);
     }
 
-    public Collection<EstadoEfecto> getEfectos() {
-        return Collections.unmodifiableCollection(efectos.values());
+    public synchronized Collection<EstadoEfecto> getEfectos() {
+        return List.copyOf(efectos.values());
     }
 }

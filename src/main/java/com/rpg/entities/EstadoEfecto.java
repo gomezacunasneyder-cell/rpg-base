@@ -9,7 +9,7 @@ public class EstadoEfecto {
     private final String nombre;
     private final TipoEfecto tipo;
     private final int valorPorTick;
-    private int turnosRestantes;
+    private volatile int turnosRestantes;
 
     public EstadoEfecto(String nombre, TipoEfecto tipo, int valorPorTick, int duracion) {
         this.nombre = nombre;
