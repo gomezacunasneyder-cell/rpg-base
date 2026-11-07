@@ -2,6 +2,7 @@ package com.rpg.persistencia;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 
 public class GestorArchivos {
 
@@ -34,6 +35,35 @@ public class GestorArchivos {
             return true;
         } catch (IOException e) {
             System.out.println("No se pudo crear " + archivo.getName() + ": " + e.getMessage());
+            return false;
+        }
+    }
+
+    // TALLER ARCHIVOS - Seccion 4: borrado con File.delete() (devuelve boolean, sin motivo del fallo)
+    public boolean borrarConFile(File archivo) {
+        boolean borrado = archivo.delete();
+        if (borrado) {
+            System.out.println("File.delete() -> true: se borro " + archivo.getPath());
+        } else {
+            System.out.println("File.delete() -> false: no se borro " + archivo.getPath()
+                    + " (no existe, esta en uso o no hay permisos; el metodo no dice cual)");
+        }
+        return borrado;
+    }
+
+    // TALLER ARCHIVOS - Seccion 4: borrado con Files.deleteIfExists (false solo si no existia; los fallos lanzan IOException)
+    public boolean borrarSiExiste(File archivo) {
+        try {
+            boolean borrado = Files.deleteIfExists(archivo.toPath());
+            if (borrado) {
+                System.out.println("Files.deleteIfExists() -> true: se borro " + archivo.getPath());
+            } else {
+                System.out.println("Files.deleteIfExists() -> false: " + archivo.getPath() + " no existia");
+            }
+            return borrado;
+        } catch (IOException e) {
+            System.out.println("No se pudo borrar " + archivo.getPath() + ": "
+                    + e.getClass().getSimpleName() + ": " + e.getMessage());
             return false;
         }
     }

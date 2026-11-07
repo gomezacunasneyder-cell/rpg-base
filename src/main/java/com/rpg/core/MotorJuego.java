@@ -103,6 +103,29 @@ public class MotorJuego {
         System.out.println("\n=== HISTORIAL DE COMBATES ===");
         lectorLog.mostrar(archivos.archivoLog());
     }
+    public void borrarPartidaGuardada() {
+        System.out.println("\n=== BORRAR PARTIDA GUARDADA ===");
+        File[] guardados = {archivos.archivoLog(), archivos.archivoPartida()};
+        boolean hayAlgo = false;
+        for (File archivo : guardados) {
+            if (archivo.exists()) {
+                System.out.println("- " + archivo.getPath() + " (" + archivo.length() + " bytes)");
+                hayAlgo = true;
+            }
+        }
+        if (!hayAlgo) {
+            System.out.println("No hay partida guardada que borrar.");
+            return;
+        }
+        String respuesta = consola.leerLinea("Seguro que quieres borrar la partida guardada? Esto no se puede deshacer (s/n): ");
+        if (!respuesta.equalsIgnoreCase("s")) {
+            System.out.println("Borrado cancelado. No se toco ningun archivo.");
+            return;
+        }
+        for (File archivo : guardados) {
+            archivos.borrarSiExiste(archivo);
+        }
+    }
 
     // ---- creacion de personajes
 

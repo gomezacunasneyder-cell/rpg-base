@@ -25,13 +25,14 @@ public class Main {
             mostrarMenu();
             // TALLER ARCHIVOS: aqui podrias ofrecer "Cargar partida" (y ver/borrar archivos con File), leyendo
             // el archivo con ObjectInputStream y delegando en el motor. Hoy el menu solo llega hasta la opcion 3.
-            opcion = consola.leerEntero("Opcion: ", 0, 5);
+            opcion = consola.leerEntero("Opcion: ", 0, 6);
             switch (opcion) {
                 case 1 -> motor.combateRapido();
                 case 2 -> motor.jugarTorneo();
                 case 3 -> motor.mostrarBestiario();
                 case 4 -> motor.mostrarInfoArchivos();
                 case 5 -> motor.verHistorial();
+                case 6 -> motor.borrarPartidaGuardada();
                 default -> System.out.println("Hasta luego.");
             }
         } while (opcion != 0);
@@ -44,6 +45,7 @@ public class Main {
         System.out.println("3. Ver bestiario");
         System.out.println("4. Archivos de partida");
         System.out.println("5. Ver historial de combates");
+        System.out.println("6. Borrar partida guardada");
         System.out.println("0. Salir");
     }
 }
