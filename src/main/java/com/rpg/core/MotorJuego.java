@@ -14,9 +14,12 @@ import com.rpg.entities.enums.TipoEfecto;
 import com.rpg.exceptions.CapacidadExcedidaException;
 import com.rpg.items.Inventario;
 import com.rpg.items.Pocion;
+import com.rpg.persistencia.EscritorLog;
 import com.rpg.persistencia.GestorArchivos;
 
 import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Random;
 
@@ -27,6 +30,8 @@ public class MotorJuego {
     private static final int CURACION_POCION_VIDA = 30;
     private static final long INTERVALO_AUTOGUARDADO_MS = 5000;
     private static final int SEGUNDOS_TURNO = 10;
+    private static final boolean AGREGAR_AL_LOG = true;
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final Consola consola;
     private final RegistroCombate registro = new RegistroCombate();
@@ -36,6 +41,7 @@ public class MotorJuego {
     private final Gremio gremio = new Gremio(NOMBRE_GREMIO);
     private final TorneoManager torneo = new TorneoManager(arena, registro);
     private final GestorArchivos archivos = new GestorArchivos();
+    private final EscritorLog escritorLog = new EscritorLog();
     // TALLER ARCHIVOS: ultimoGuardado es solo el estado de la partida en memoria. Aqui (o en un metodo
     // nuevo como cargarProgreso) iria la carga de una partida guardada en disco; llamala desde Main.
     private volatile String ultimoGuardado = "";
@@ -58,6 +64,7 @@ public class MotorJuego {
 
         cerrarCombate(jugador, enemigo, huyo);
         guardarProgreso();
+        guardarLogCombate();
     }
 
     public void jugarTorneo() {
@@ -66,6 +73,7 @@ public class MotorJuego {
         registro.agregar("%nCAMPEON DEL TORNEO: %s", campeon.getNombre());
         perfil.desbloquearLogro("Campeon del Torneo");
         guardarProgreso();
+        guardarLogCombate();
     }
 
     public void mostrarBestiario() {
@@ -284,6 +292,17 @@ public class MotorJuego {
     }
 
     // ---- guardado
+    private void guardarLogCombate() {
+        if (!archivos.asegurarCarpeta()) {
+            System.out.println("No se pudo crear la carpeta " + GestorArchivos.CARPETA_PARTIDAS);
+            return;
+        }
+        File log = archivos.archivoLog();
+        String encabezado = "=== Registro guardado el " + LocalDateTime.now().format(FORMATO_FECHA) + " ===";
+        if (escritorLog.escribir(log, encabezado, registro.getTexto(), AGREGAR_AL_LOG)) {
+            System.out.println("[Log de combate guardado en " + log.getPath() + " - " + log.length() + " bytes]");
+        }
+    }
 
     /**
      * Guarda las estadisticas en memoria (el texto queda en {@code ultimoGuardado}); aun no se escribe ningun
