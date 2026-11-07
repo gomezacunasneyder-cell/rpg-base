@@ -14,6 +14,7 @@ import com.rpg.entities.enums.TipoEfecto;
 import com.rpg.exceptions.CapacidadExcedidaException;
 import com.rpg.items.Inventario;
 import com.rpg.items.Pocion;
+import com.rpg.persistencia.AutoguardadoEnDisco;
 import com.rpg.persistencia.EscritorLog;
 import com.rpg.persistencia.GestorArchivos;
 import com.rpg.persistencia.GestorPartida;
@@ -32,6 +33,7 @@ public class MotorJuego {
     private static final String NOMBRE_GREMIO = "Guardianes del Alba";
     private static final int CURACION_POCION_VIDA = 30;
     private static final long INTERVALO_AUTOGUARDADO_MS = 5000;
+    private static final long ESPERA_CIERRE_AUTOGUARDADO_MS = 2000;
     private static final int SEGUNDOS_TURNO = 10;
     private static final boolean AGREGAR_AL_LOG = true;
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -47,6 +49,8 @@ public class MotorJuego {
     private final EscritorLog escritorLog = new EscritorLog();
     private final LectorLog lectorLog = new LectorLog();
     private final GestorPartida gestorPartida = new GestorPartida();
+    private final AutoguardadoEnDisco autoguardado = new AutoguardadoEnDisco(archivos.archivoAutoguardado());
+    private Thread hiloAutoGuardado;
     // TALLER ARCHIVOS: ultimoGuardado es solo el estado de la partida en memoria. Aqui (o en un metodo
     // nuevo como cargarProgreso) iria la carga de una partida guardada en disco; llamala desde Main.
     private volatile String ultimoGuardado = "";
@@ -107,6 +111,11 @@ public class MotorJuego {
     public void verHistorial() {
         System.out.println("\n=== HISTORIAL DE COMBATES ===");
         lectorLog.mostrar(archivos.archivoLog());
+    }
+
+    public void verAutoguardado() {
+        System.out.println("\n=== ULTIMO AUTOGUARDADO ===");
+        autoguardado.mostrar();
     }
 
     public void borrarPartidaGuardada() {
@@ -400,10 +409,35 @@ public class MotorJuego {
         System.out.println("[Progreso guardado en memoria]");
         return ultimoGuardado;
     }
+    private String autoguardar() {
+        String texto = guardarProgreso();
+        if (autoguardado.escribir(texto)) {
+            File archivo = autoguardado.getArchivo();
+            System.out.println("[Autoguardado en disco: " + archivo.getPath() + " - " + archivo.length() + " bytes]");
+        }
+        return texto;
+    }
+
     public void iniciarAutoGuardado() {
-        Thread hilo = new Thread(new AutoGuardadoDaemon(INTERVALO_AUTOGUARDADO_MS, this::guardarProgreso), "AutoGuardado");
+        Thread hilo = new Thread(new AutoGuardadoDaemon(INTERVALO_AUTOGUARDADO_MS, this::autoguardar), "AutoGuardado");
         hilo.setDaemon(true);
         hilo.start();
+        hiloAutoGuardado = hilo;
+    }
+
+    /** Al salir: interrumpe el daemon, espera a que termine la escritura en curso y guarda por ultima vez. */
+    public void detenerAutoGuardado() {
+        Thread hilo = hiloAutoGuardado;
+        if (hilo == null) {
+            return;
+        }
+        hilo.interrupt();
+        try {
+            hilo.join(ESPERA_CIERRE_AUTOGUARDADO_MS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        autoguardar();
     }
 
     public String getUltimoGuardado() {

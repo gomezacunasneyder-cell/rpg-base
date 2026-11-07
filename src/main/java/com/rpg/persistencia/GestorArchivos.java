@@ -9,6 +9,7 @@ public class GestorArchivos {
     public static final String CARPETA_PARTIDAS = "partidas";
     public static final String NOMBRE_LOG = "log_combate.txt";
     public static final String NOMBRE_PARTIDA = "partida.dat";
+    public static final String NOMBRE_AUTOGUARDADO = "autoguardado.txt";
 
     public File carpetaPartidas() {
         return new File(CARPETA_PARTIDAS);
@@ -20,6 +21,10 @@ public class GestorArchivos {
 
     public File archivoPartida() {
         return new File(carpetaPartidas(), NOMBRE_PARTIDA);
+    }
+
+    public File archivoAutoguardado() {
+        return new File(carpetaPartidas(), NOMBRE_AUTOGUARDADO);
     }
 
     public boolean asegurarCarpeta() {
