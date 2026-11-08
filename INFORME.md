@@ -9,7 +9,27 @@ _Pendiente: se completa en la Parte D, cuando exista el login con MVC._
 
 ## 2. Inyeccion SQL: evidencia y defensa
 
-_Pendiente: se completa en la Parte B (salida de consola de `LoginInseguroDemo` con `admin' OR 1=1 -- ` y la misma entrada fallando en `JugadorDAO.autenticar`)._
+Entrada del ataque (lleva **un espacio al final**, MySQL lo exige despues de `--`): `admin' OR 1=1 -- ` con cualquier clave.
+
+**Evidencia** (salida de consola de `LoginInseguroDemo`, caso 3):
+
+```
+PEGAR AQUI LA SALIDA REAL DE TU EJECUCION (caso 3: ATAQUE OR 1=1 y comentario)
+
+--- Caso 3: ATAQUE: OR 1=1 y comentario ---
+Entrada -> usuario="admin' OR 1=1 -- "  clave="no_la_se"
+[INSEGURO] Statement + concatenacion
+  SQL armado: SELECT id, usuario, rol FROM jugadores WHERE usuario = 'admin' OR 1=1 -- ' AND clave = '87733d73aaf1c235d4db60e6810a2d2558f7c8ef68cf67c8239a8c74eb6cb20e'
+  Filas devueltas por la consulta: 2
+  RESULTADO: ENTRO como 'admin' (rol admin)  <<< VULNERABLE: entro SIN conocer la clave
+[SEGURO] PreparedStatement + comodines ?
+  RESULTADO: login RECHAZADO (usuario o clave incorrectos)  <<< DEFENDIDO: la entrada se trato como un dato, no como codigo
+```
+
+**Por que entra con `Statement` y concatenacion.** El texto del usuario se pega dentro del SQL y queda:
+`... WHERE usuario = 'admin' OR 1=1 -- ' AND clave = '...'`. La condicion `1=1` siempre es verdadera y `-- ` comenta el resto, incluida la comparacion de la clave. La base ejecuta la entrada como si fuera codigo.
+
+**Por que falla con `PreparedStatement` (diapositiva "El Escudo").** El SQL se escribe con comodines (`WHERE usuario = ? AND clave = ?`) y los valores se entregan aparte con `setString`. Los `?` reservan espacios solo para datos, nunca para logica ejecutable: la base busca un usuario cuyo nombre literal sea exactamente `admin' OR 1=1 -- `, no existe, y la logica de la consulta permanece intacta. No hay inyeccion posible.
 
 ## 3. Statement vs PreparedStatement (pruebas propias)
 
