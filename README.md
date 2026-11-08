@@ -121,9 +121,9 @@ Mas abajo hay un checklist aparte para el taller de archivos.
 
 ### Antes de empezar
 
-- [ ] El proyecto compila y ejecutas `Main` sin errores.
-- [ ] Jugaste un combate rapido y un torneo completo, y localizaste los 5 comentarios `TALLER CONCURRENCIA`.
-- [ ] Repasaste la tabla "Lo que ya debes tener": si algun concepto no lo reconoces, repasalo antes de seguir.
+- [x] El proyecto compila y ejecutas `Main` sin errores.
+- [x] Jugaste un combate rapido y un torneo completo, y localizaste los 5 comentarios `TALLER CONCURRENCIA`.
+- [x] Repasaste la tabla "Lo que ya debes tener": si algun concepto no lo reconoces, repasalo antes de seguir.
 
 ### Seccion 1: Temporizador de turno (`Thread`, `Runnable`, `sleep`)
 
@@ -169,16 +169,16 @@ Mas abajo hay un checklist aparte para el taller de archivos.
 
 ### Seccion 6: Depuracion y condiciones de carrera
 
-- [ ] Reproduciste la condicion de carrera: dos efectos DoT (o un efecto y un ataque) sobre el mismo `Personaje` pierden actualizaciones de vida.
-- [ ] La corrigiste en `Personaje.recibirDanio` y `curar` con `synchronized` (mecanismo principal, visto en la unidad 4.2), y puedes explicar por que lo elegiste.
-- [ ] Protegiste tambien el acceso a `estado` y `efectos` (ver la advertencia de arriba).
-- [ ] Puedes explicar por que `AtomicInteger.addAndGet(-danio)` no basta aqui: `setVida` acota la vida a `0..vidaMaxima` y cambia `estado`. (Reto extra: resolverlo con `updateAndGet` o un bucle con `compareAndSet`.)
-- [ ] Ningun `catch (InterruptedException)` esta vacio ni solo imprime la traza.
-- [ ] Nunca llamas a `.start()` dos veces sobre el mismo `Thread`: para cada turno o combate se crea un `Thread` nuevo.
-- [ ] Nunca llamas a `run()` directamente: usas siempre `start()`, que es lo que crea el hilo nuevo.
-- [ ] Todos los `Thread.sleep()` estan dentro de `try-catch` que gestiona `InterruptedException`.
-- [ ] Todo hilo de auto-guardado o monitoreo usa `setDaemon(true)` antes de `.start()` (ver "Investigacion obligatoria").
-- [ ] El `join()` del torneo espera a ambas semifinales antes de leer la memoria compartida de los ganadores.
+- [x] Reproduciste la condicion de carrera: dos efectos DoT (o un efecto y un ataque) sobre el mismo `Personaje` pierden actualizaciones de vida.
+- [x] La corrigiste en `Personaje.recibirDanio` y `curar` con `synchronized` (mecanismo principal, visto en la unidad 4.2), y puedes explicar por que lo elegiste.
+- [x] Protegiste tambien el acceso a `estado` y `efectos` (ver la advertencia de arriba).
+- [x] Puedes explicar por que `AtomicInteger.addAndGet(-danio)` no basta aqui: `setVida` acota la vida a `0..vidaMaxima` y cambia `estado`. (Reto extra: resolverlo con `updateAndGet` o un bucle con `compareAndSet`.)
+- [x] Ningun `catch (InterruptedException)` esta vacio ni solo imprime la traza.
+- [x] Nunca llamas a `.start()` dos veces sobre el mismo `Thread`: para cada turno o combate se crea un `Thread` nuevo.
+- [x] Nunca llamas a `run()` directamente: usas siempre `start()`, que es lo que crea el hilo nuevo.
+- [x] Todos los `Thread.sleep()` estan dentro de `try-catch` que gestiona `InterruptedException`.
+- [x] Todo hilo de auto-guardado o monitoreo usa `setDaemon(true)` antes de `.start()` (ver "Investigacion obligatoria").
+- [x] El `join()` del torneo espera a ambas semifinales antes de leer la memoria compartida de los ganadores.
 
 ## Checklist del taller de archivos: lo que debes realizar
 
@@ -187,78 +187,98 @@ en `MotorJuego`, `RegistroCombate`, `Main` y las clases del dominio.
 
 ### Antes de empezar
 
-- [ ] El proyecto compila y ejecutas `Main` sin errores.
-- [ ] Localizaste los comentarios `TALLER ARCHIVOS` y entiendes que el guardado actual es solo en memoria.
+- [x] El proyecto compila y ejecutas `Main` sin errores.
+- [x] Localizaste los comentarios `TALLER ARCHIVOS` y entiendes que el guardado actual es solo en memoria.
+
 
 ### Seccion 1: Clase `File`
 
-- [ ] Crear un `File` con una ruta relativa y otro con una ruta absoluta (`getAbsolutePath()`), y explicar la diferencia.
-- [ ] Usar `exists()`, `length()` y `getName()` para mostrar informacion de un archivo de partida o de log.
-- [ ] Usar `createNewFile()` y manejar su `IOException`.
-- [ ] Crear la carpeta `partidas/` si no existe (`mkdirs()`), sin fallar si ya existe.
+- [x] Crear un `File` con una ruta relativa y otro con una ruta absoluta (`getAbsolutePath()`), y explicar la diferencia.
+- [x] Usar `exists()`, `length()` y `getName()` para mostrar informacion de un archivo de partida o de log.
+- [x] Usar `createNewFile()` y manejar su `IOException`.
+- [x] Crear la carpeta `partidas/` si no existe (`mkdirs()`), sin fallar si ya existe.
+
+Evidencia: `GestorArchivos` (con `MotorJuego.mostrarInfoArchivos`); la opcion 4 del menu muestra la ruta relativa, la absoluta, `exists()` y `length()`.
 
 ### Seccion 2: Escritura (`BufferedWriter` + `FileWriter`)
 
-- [ ] Volcar el log de `RegistroCombate` a un `.txt` con `BufferedWriter` + `FileWriter`.
-- [ ] Escribir con `newLine()` en vez de concatenar saltos de linea a mano.
-- [ ] Usar `FileWriter(file, true)` para **agregar** (append) sin borrar los combates anteriores, y comprobar la diferencia con el modo por defecto, que sobrescribe.
-- [ ] Hacer `flush()` / cerrar el escritor para que el contenido llegue al disco.
+- [x] Volcar el log de `RegistroCombate` a un `.txt` con `BufferedWriter` + `FileWriter`.
+- [x] Escribir con `newLine()` en vez de concatenar saltos de linea a mano.
+- [x] Usar `FileWriter(file, true)` para **agregar** (append) sin borrar los combates anteriores, y comprobar la diferencia con el modo por defecto, que sobrescribe.
+- [x] Hacer `flush()` / cerrar el escritor para que el contenido llegue al disco.
+
+Evidencia: `EscritorLog` (con `DemoEscritura`); `MotorJuego.guardarLogCombate()` agrega cada combate a `partidas/log_combate.txt`.
 
 ### Seccion 3: Lectura (`BufferedReader` + `FileReader`)
 
-- [ ] Leer el log con `BufferedReader` + `FileReader` usando `while ((linea = lector.readLine()) != null)`.
-- [ ] Mostrar por consola el historial leido (por ejemplo, una opcion nueva en el menu de `Main`).
-- [ ] Capturar `FileNotFoundException` cuando el archivo aun no existe y mostrar un mensaje claro (sin tildes).
+- [x] Leer el log con `BufferedReader` + `FileReader` usando `while ((linea = lector.readLine()) != null)`.
+- [x] Mostrar por consola el historial leido (por ejemplo, una opcion nueva en el menu de `Main`).
+- [x] Capturar `FileNotFoundException` cuando el archivo aun no existe y mostrar un mensaje claro (sin tildes).
+
+Evidencia: `LectorLog` (con `DemoLectura`); opcion 5 del menu ("Ver historial de combates").
 
 ### Seccion 4: Borrado
 
-- [ ] Borrar un archivo con `File.delete()` y revisar el `boolean` que devuelve.
-- [ ] Borrar con `Files.deleteIfExists(Path)` y explicar la diferencia con `File.delete()`.
-- [ ] Ofrecer en el menu una opcion para borrar la partida guardada, confirmando antes con el jugador.
+- [x] Borrar un archivo con `File.delete()` y revisar el `boolean` que devuelve.
+- [x] Borrar con `Files.deleteIfExists(Path)` y explicar la diferencia con `File.delete()`.
+- [x] Ofrecer en el menu una opcion para borrar la partida guardada, confirmando antes con el jugador.
+
+Evidencia: `GestorArchivos.borrarConFile` y `borrarSiExiste` (con `DemoBorrado`); opcion 6 del menu, que pide `s/n` antes de borrar.
 
 ### Seccion 5: Serializacion (`Serializable`, `ObjectOutputStream`, `ObjectInputStream`)
 
-- [ ] Hacer `Serializable` las clases del dominio que forman la partida: `Personaje` (y `Guerrero`, `Mago`, `Enemigo`), `Inventario`, `Pocion`, `Arma`, `Gremio`, `EstadoEfecto`, `PerfilJugador`.
-- [ ] Declarar `serialVersionUID` en cada clase serializable y explicar para que sirve.
-- [ ] Marcar con `transient` al menos un campo que no deba guardarse y comprobar que vuelve con su valor por defecto al cargar.
-- [ ] Guardar la partida con `ObjectOutputStream.writeObject(...)` en un `.dat`.
-- [ ] Cargar la partida con `ObjectInputStream.readObject()`, con el cast al tipo correcto.
-- [ ] Provocar y resolver una `NotSerializableException` por un objeto anidado que no es `Serializable`.
-- [ ] Comprobar que despues de cargar, el `Gremio` y sus `Personaje` siguen relacionados (el ciclo `Personaje` - `Gremio` se serializa bien).
-- [ ] Agregar una opcion "Cargar partida" y comprobar que el juego continua con el estado guardado.
+- [x] Hacer `Serializable` las clases del dominio que forman la partida: `Personaje` (y `Guerrero`, `Mago`, `Enemigo`), `Inventario`, `Pocion`, `Arma`, `Gremio`, `EstadoEfecto`, `PerfilJugador`.
+- [x] Declarar `serialVersionUID` en cada clase serializable y explicar para que sirve.
+- [x] Marcar con `transient` al menos un campo que no deba guardarse y comprobar que vuelve con su valor por defecto al cargar.
+- [x] Guardar la partida con `ObjectOutputStream.writeObject(...)` en un `.dat`.
+- [x] Cargar la partida con `ObjectInputStream.readObject()`, con el cast al tipo correcto.
+- [x] Provocar y resolver una `NotSerializableException` por un objeto anidado que no es `Serializable`.
+- [x] Comprobar que despues de cargar, el `Gremio` y sus `Personaje` siguen relacionados (el ciclo `Personaje` - `Gremio` se serializa bien).
+- [x] Agregar una opcion "Cargar partida" y comprobar que el juego continua con el estado guardado.
+
+Evidencia: `PartidaGuardada` y `GestorPartida` (con `DemoSerializacion`); opcion 7 del menu. `transient` esta en `efectos`, `hilosEfectos` y `oyenteEfectos` de `Personaje`, que se recrean en su `readObject`.
 
 ### Seccion 6: `try-with-resources` y excepciones
 
-- [ ] Todos los flujos (`BufferedWriter`, `BufferedReader`, `ObjectOutputStream`, `ObjectInputStream`) se abren con `try-with-resources` (`AutoCloseable`); ningun `close()` manual.
-- [ ] Manejas `IOException`, `FileNotFoundException` (la mas especifica va primero), `ClassNotFoundException` y `NotSerializableException` con mensajes utiles.
-- [ ] Ningun `catch` esta vacio ni solo imprime la traza.
-- [ ] El juego no se cae si el archivo no existe, esta corrupto o no se puede escribir.
+- [x] Todos los flujos (`BufferedWriter`, `BufferedReader`, `ObjectOutputStream`, `ObjectInputStream`) se abren con `try-with-resources` (`AutoCloseable`); ningun `close()` manual.
+- [x] Manejas `IOException`, `FileNotFoundException` (la mas especifica va primero), `ClassNotFoundException` y `NotSerializableException` con mensajes utiles.
+- [x] Ningun `catch` esta vacio ni solo imprime la traza.
+- [x] El juego no se cae si el archivo no existe, esta corrupto o no se puede escribir.
+
+Evidencia: `EscritorLog`, `LectorLog` y `GestorPartida` capturan `FileNotFoundException` antes que `IOException`; se probo con archivo inexistente, truncado, con texto a mano, de solo lectura y con carpetas en lugar de archivos.
 
 ### Seccion 7: Integracion con concurrencia (si ya hiciste el taller anterior)
 
-- [ ] `AutoGuardadoDaemon` escribe a disco (ya no solo en memoria) cada cierto intervalo.
-- [ ] Protegiste la escritura y la lectura del mismo archivo con `synchronized` (sobre un mismo objeto candado o metodos de una clase compartida), para que el daemon y el hilo principal no lo accedan a la vez.
-- [ ] Comprobaste que, al cerrar el juego, el hilo daemon no deja un archivo a medio escribir.
+- [x] `AutoGuardadoDaemon` escribe a disco (ya no solo en memoria) cada cierto intervalo.
+- [x] Protegiste la escritura y la lectura del mismo archivo con `synchronized` (sobre un mismo objeto candado o metodos de una clase compartida), para que el daemon y el hilo principal no lo accedan a la vez.
+- [x] Comprobaste que, al cerrar el juego, el hilo daemon no deja un archivo a medio escribir.
+
+Evidencia: `AutoguardadoEnDisco` (metodos `synchronized` sobre una misma instancia, escritura en `.tmp` y reemplazo atomico con `Files.move`), `MotorJuego.autoguardar()` y `detenerAutoGuardado()`, y `DemoAutoguardado` (sin candado muchas lecturas incompletas; con candado, ninguna). Opcion 8 del menu.
 
 ## Investigacion obligatoria
 
 Dos temas de la guia no se explican en las presentaciones de las unidades 4.1 y 4.2. Debes investigarlos
 por tu cuenta y dejar evidencia en el proyecto:
 
-- [ ] **Hilos daemon.** Demuestra con una prueba que la JVM cierra aunque el hilo daemon siga vivo, y que
+- [x] **Hilos daemon.** Demuestra con una prueba que la JVM cierra aunque el hilo daemon siga vivo, y que
   `setDaemon(true)` despues de `start()` lanza `IllegalThreadStateException`. Anota en un comentario la
   diferencia entre hilo de usuario y hilo daemon.
-- [ ] **`ReentrantLock`.** Reescribe `Personaje.recibirDanio` con `lock()` / `unlock()` dentro de `try-finally`
+- [x] **`ReentrantLock`.** Reescribe `Personaje.recibirDanio` con `lock()` / `unlock()` dentro de `try-finally`
   y explica en 2 o 3 lineas cuando lo preferirias a `synchronized`. Si el `unlock()` no esta en el `finally`,
   el lock puede quedar tomado para siempre.
 
+Evidencia: `DemoConcurrencia` (secciones 3 y 4, con los comentarios sobre hilo de usuario frente a daemon y sobre `ReentrantLock`).
+
 ## Investigacion obligatoria (taller de archivos)
 
-- [ ] **`FileWriter` vs `Files.writeString`.** Explica en 2 o 3 lineas la diferencia (flujo con buffer que
+- [x] **`FileWriter` vs `Files.writeString`.** Explica en 2 o 3 lineas la diferencia (flujo con buffer que
   abres y cierras tu, frente a una sola llamada de NIO que escribe todo el texto) y cuando usarias cada uno.
-- [ ] **Seguridad de `Serializable`.** Explica por que no se debe deserializar (`readObject`) datos que no
+- [x] **Seguridad de `Serializable`.** Explica por que no se debe deserializar (`readObject`) datos que no
   son de confianza: un archivo manipulado puede ejecutar codigo o consumir recursos al reconstruir objetos.
   Anota que alternativas existen (por ejemplo JSON o un formato de texto propio).
+
+Evidencia: comentario inicial y codigo de `DemoInvestigacionArchivos`; el filtro `ObjectInputFilter` esta aplicado en `GestorPartida.cargar`.
+
 
 ## Adaptaciones respecto a la guia
 
@@ -278,6 +298,18 @@ Este proyecto sigue la guia del taller, con estas diferencias a proposito:
   paquete es `com.rpg.concurrency`: ajusta la linea `package` si copias el esqueleto.
 - **Detalles de `EfectoContinuoTask` que la guia sugiere.** Usa un `finally` para liberar recursos y consulta
   `Thread.currentThread().isInterrupted()` donde no haya un `sleep()` que lance `InterruptedException`.
+- **Autoguardado en `autoguardado.txt`, no en `partida.dat`.** El daemon escribe una copia de texto del estado en
+  `partidas/autoguardado.txt` (opcion 8 del menu). `partida.dat` solo se escribe al terminar un combate o torneo,
+  para que un autoguardado de una sesion recien abierta no pise la partida guardada.
+- **Filtro de deserializacion.** `GestorPartida.cargar` aplica un `ObjectInputFilter` con lista blanca de clases y
+  limites de profundidad, referencias y bytes (ver `DemoInvestigacionArchivos`).
+
+## Limitaciones conocidas
+
+- Si abres el juego y juegas un combate sin elegir antes "Cargar partida", `partida.dat` se reemplaza con el estado
+  de la sesion nueva. Para continuar una partida hay que cargarla primero (opcion 7).
+- El guardado de `partida.dat` escribe directamente en el archivo: si fallara a la mitad, el archivo quedaria
+  incompleto (al cargar se detecta y se avisa). El autoguardado en `autoguardado.txt` si usa archivo temporal.
 
 ## Notas
 
