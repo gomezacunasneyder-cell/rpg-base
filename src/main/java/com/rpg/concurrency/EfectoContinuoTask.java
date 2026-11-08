@@ -19,17 +19,20 @@ public class EfectoContinuoTask implements Runnable {
 
     @Override
     public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-                Thread.sleep(intervaloMs);
-                if (!personaje.aplicarTickEfecto(efecto)) {
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    Thread.sleep(intervaloMs);
+                    if (!personaje.aplicarTickEfecto(efecto)) {
+                        break;
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     break;
                 }
-            } catch (InterruptedException e) {
-                personaje.limpiarEfecto(efecto);
-                Thread.currentThread().interrupt();
-                break;
             }
+        } finally {
+            personaje.limpiarEfecto(efecto);
         }
     }
 
