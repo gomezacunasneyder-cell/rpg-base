@@ -1,0 +1,44 @@
+=== Registro guardado el 2026-11-07 17:57:17 ===
+
+=== 1 vs Goblin ===
+
+-- Ronda 1 --
+1            [##########] 120/120 VIVO
+Goblin       [##########]  50/50  VIVO
+1 ataca a Goblin y causa 27 de dano
+   Goblin       [#####-----]  23/50  VIVO
+Goblin ataca con furia a 1 y causa 10 de dano
+   1            [#########-] 110/120 VIVO
+
+-- Ronda 2 --
+1            [#########-] 110/120 VIVO
+Goblin       [#####-----]  23/50  VIVO
+1 ataca a Goblin y causa 23 de dano
+   Goblin       [----------]   0/50  MUERTO
+
+Victoria de 1!
+Logro desbloqueado: Primera Victoria
+Logro desbloqueado: Cazador de Goblin
+Botin perdido: Inventario lleno (capacidad: 3)
+=== Registro guardado el 2026-11-07 19:44:53 ===
+
+=== 1212 vs Goblin ===
+
+-- Ronda 1 --
+1212         [##########] 120/120 VIVO
+Goblin       [##########]  50/50  VIVO
+1212 ataca a Goblin y causa 29 de dano
+   Goblin       [####------]  21/50  VIVO
+Goblin ataca a 1212 y causa 8 de dano
+   1212         [#########-] 112/120 VIVO
+
+-- Ronda 2 --
+1212         [#########-] 112/120 VIVO
+Goblin       [####------]  21/50  VIVO
+1212 ataca a Goblin (CRITICO) y causa 21 de dano
+   Goblin       [----------]   0/50  MUERTO
+
+Victoria de 1212!
+Logro desbloqueado: Primera Victoria
+Logro desbloqueado: Cazador de Goblin
+Botin perdido: Inventario lleno (capacidad: 3)
