@@ -3,6 +3,7 @@ package com.rpg.core;
 import com.rpg.entities.Enemigo;
 import com.rpg.entities.EstadoEfecto;
 import com.rpg.entities.enums.TipoEfecto;
+import com.rpg.model.Monstruo;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -11,6 +12,9 @@ import java.util.Map;
 
 /** Catalogo de monstruos (Map nombre -> plantilla) y contador de derrotas por monstruo. */
 public class Bestiario {
+
+    // La tabla monstruos no guarda defensa: los monstruos nuevos que cree un admin usan este valor.
+    private static final int DEFENSA_POR_DEFECTO = 3;
 
     private final Map<String, Enemigo> catalogo = new LinkedHashMap<>();
     private final Map<String, Integer> derrotados = new LinkedHashMap<>();
@@ -40,6 +44,19 @@ public class Bestiario {
             }
         }
         return null;
+    }
+
+    /**
+     * Crea el enemigo de un combate a partir de una fila de la tabla monstruos. La vida y el ataque
+     * salen de la base de datos; si el nombre esta en el catalogo, conserva su defensa y habilidad.
+     */
+    public Enemigo crearEnemigo(Monstruo monstruo) {
+        for (Map.Entry<String, Enemigo> entrada : catalogo.entrySet()) {
+            if (entrada.getKey().equalsIgnoreCase(monstruo.getNombre())) {
+                return entrada.getValue().conEstadisticas(monstruo.getVida(), monstruo.getAtaque());
+            }
+        }
+        return new Enemigo(monstruo.getNombre(), monstruo.getVida(), monstruo.getAtaque(), DEFENSA_POR_DEFECTO);
     }
 
     public void registrarEnemigoDerrotado(String nombre) {

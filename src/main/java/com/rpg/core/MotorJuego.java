@@ -2,6 +2,9 @@ package com.rpg.core;
 
 import com.rpg.concurrency.GestorTurno;
 import com.rpg.concurrency.AutoGuardadoDaemon;
+import com.rpg.controller.MonstruoController;
+import com.rpg.controller.RankingController;
+import com.rpg.controller.Resultado;
 import com.rpg.entities.Enemigo;
 import com.rpg.entities.EstadoEfecto;
 import com.rpg.entities.Gremio;
@@ -14,6 +17,8 @@ import com.rpg.entities.enums.TipoEfecto;
 import com.rpg.exceptions.CapacidadExcedidaException;
 import com.rpg.items.Inventario;
 import com.rpg.items.Pocion;
+import com.rpg.model.Jugador;
+import com.rpg.model.Monstruo;
 import com.rpg.persistencia.AutoguardadoEnDisco;
 import com.rpg.persistencia.EscritorLog;
 import com.rpg.persistencia.GestorArchivos;
@@ -39,6 +44,9 @@ public class MotorJuego {
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final Consola consola;
+    // Cuenta con la que se inicio sesion (no es el heroe del combate). Los controllers hablan con la BD.
+    private final MonstruoController monstruos;
+    private final RankingController ranking;
     private final RegistroCombate registro = new RegistroCombate();
     private final Arena arena = new Arena(registro, new Random());
     private final Bestiario bestiario = new Bestiario();
@@ -55,23 +63,36 @@ public class MotorJuego {
     // nuevo como cargarProgreso) iria la carga de una partida guardada en disco; llamala desde Main.
     private volatile String ultimoGuardado = "";
 
-    public MotorJuego(Consola consola) {
+    public MotorJuego(Consola consola, Jugador cuenta) {
         this.consola = consola;
+        this.monstruos = new MonstruoController(cuenta);
+        this.ranking = new RankingController(cuenta);
     }
 
     // ---- opciones del menu principal
 
     public void combateRapido() {
+        // Los rivales salen de la tabla monstruos. Se cargan primero para no pedir el heroe si falla la BD.
+        Resultado<List<Monstruo>> rivales = monstruos.listar();
+        if (rivales.esError()) {
+            System.out.println(rivales.getMensaje());
+            return;
+        }
+        if (rivales.getDato().isEmpty()) {
+            System.out.println("No hay monstruos en la base de datos. Un administrador debe crear alguno.");
+            return;
+        }
         registro.limpiar();
         Personaje jugador = crearJugador();
-        Enemigo enemigo = elegirEnemigo();
+        Monstruo rival = elegirRival(rivales.getDato());
+        Enemigo enemigo = bestiario.crearEnemigo(rival);
         registro.agregar("%n=== %s vs %s ===", jugador.getNombre(), enemigo.getNombre());
 
         boolean huyo = combatir(jugador, enemigo);
         jugador.cancelarEfectos();
         enemigo.cancelarEfectos();
 
-        cerrarCombate(jugador, enemigo, huyo);
+        cerrarCombate(jugador, enemigo, rival, huyo);
         guardarProgreso();
         guardarLogCombate();
         guardarPartidaEnDisco();
@@ -194,29 +215,35 @@ public class MotorJuego {
         }
     }
 
-    private Enemigo elegirEnemigo() {
-        List<String> nombres = bestiario.nombres();
+    private Monstruo elegirRival(List<Monstruo> rivales) {
         System.out.println("Rivales disponibles:");
-        for (int i = 0; i < nombres.size(); i++) {
-            System.out.printf("  %d. %s%n", i + 1, nombres.get(i));
+        for (int i = 0; i < rivales.size(); i++) {
+            Monstruo monstruo = rivales.get(i);
+            System.out.printf("  %d. %s (vida %d, ataque %d)%n", i + 1, monstruo.getNombre(),
+                    monstruo.getVida(), monstruo.getAtaque());
         }
         while (true) {
             String texto = consola.leerLinea("Rival (numero o nombre): ");
-            Enemigo enemigo = resolverRival(texto, nombres);
-            if (enemigo != null) {
-                return enemigo;
+            Monstruo rival = resolverRival(texto, rivales);
+            if (rival != null) {
+                return rival;
             }
             System.out.println("No existe ese rival.");
         }
     }
 
-    private Enemigo resolverRival(String texto, List<String> nombres) {
+    private Monstruo resolverRival(String texto, List<Monstruo> rivales) {
         try {
             int numero = Integer.parseInt(texto);
-            boolean valido = numero >= 1 && numero <= nombres.size();
-            return valido ? bestiario.crearEnemigo(nombres.get(numero - 1)) : null;
+            boolean valido = numero >= 1 && numero <= rivales.size();
+            return valido ? rivales.get(numero - 1) : null;
         } catch (NumberFormatException e) {
-            return bestiario.crearEnemigo(texto);
+            for (Monstruo monstruo : rivales) {
+                if (monstruo.getNombre().equalsIgnoreCase(texto)) {
+                    return monstruo;
+                }
+            }
+            return null;
         }
     }
 
@@ -322,7 +349,7 @@ public class MotorJuego {
 
     // ---- resultado del combate
 
-    private void cerrarCombate(Personaje jugador, Enemigo enemigo, boolean huyo) {
+    private void cerrarCombate(Personaje jugador, Enemigo enemigo, Monstruo rival, boolean huyo) {
         if (huyo) {
             registro.agregar("%s huye del combate.", jugador.getNombre());
         } else if (jugador.estaVivo()) {
@@ -331,9 +358,20 @@ public class MotorJuego {
             bestiario.registrarEnemigoDerrotado(enemigo.getNombre());
             desbloquearLogros(jugador, enemigo);
             repartirBotin(jugador);
+            registrarVictoriaEnRanking(rival);
         } else {
             registro.agregar("%n%s ha caido ante %s.", jugador.getNombre(), enemigo.getNombre());
             perfil.registrarDerrota();
+        }
+    }
+
+    /** Integracion con la base de datos: toda victoria contra un monstruo de la tabla queda registrada. */
+    private void registrarVictoriaEnRanking(Monstruo rival) {
+        Resultado<Void> resultado = ranking.registrarVictoria(rival.getId());
+        if (resultado.esExito()) {
+            registro.agregar("Victoria registrada en el ranking (rival: %s).", rival.getNombre());
+        } else {
+            registro.agregar("No se pudo registrar la victoria en la base de datos: %s", resultado.getMensaje());
         }
     }
 
