@@ -14,4 +14,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <dependencies>
+        <!-- TALLER JDBC: controlador de MySQL. Sin el, DriverManager no sabe hablar con MySQL
+             (ver el comentario de com.rpg.dao.ConexionDB). Se agrega por Maven, no como JAR a mano. -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.4.0</version>
+        </dependency>
+    </dependencies>
+
 </project>

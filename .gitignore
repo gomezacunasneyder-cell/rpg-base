@@ -9,3 +9,7 @@ target/
 *.log
 *.dat
 partidas/
+
+# TALLER JDBC: el config.txt real tiene usuario y clave de la base de datos y NO se sube.
+# Solo se versiona config.example.txt (con valores de ejemplo).
+/config.txt
