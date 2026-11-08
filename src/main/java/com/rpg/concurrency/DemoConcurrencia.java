@@ -106,6 +106,13 @@ public class DemoConcurrencia {
                 + ") pero la JVM cierra igual. Si este programa termina, queda demostrado.");
     }
 
+    /*
+     * Version con ReentrantLock de Personaje.recibirDanio: lock() antes de tocar la vida y unlock() siempre en el
+     * finally, porque si algo lanza una excepcion antes de liberar, el lock quedaria tomado para siempre y los demas
+     * hilos esperarian sin fin. Lo preferiria a synchronized cuando necesite tryLock() con tiempo de espera,
+     * lockInterruptibly(), un candado justo (fair) o varias Condition; para el resto, synchronized es mas simple
+     * y libera el candado solo.
+     */
     private static class VidaConLock {
 
         private final ReentrantLock candado = new ReentrantLock();

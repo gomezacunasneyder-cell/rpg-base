@@ -10,12 +10,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.NotSerializableException;
+import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.StreamCorruptedException;
 
 /** Guarda y carga la partida en un archivo .dat con serializacion de objetos. */
 public class GestorPartida {
+
+    public static final String FILTRO_DESERIALIZACION =
+            "maxdepth=20;maxrefs=10000;maxbytes=1000000;com.rpg.persistencia.PartidaGuardada;com.rpg.entities.**;"
+                    + "com.rpg.items.*;java.lang.*;java.util.*;java.time.*;!*";
 
     public boolean guardar(File archivo, PartidaGuardada partida) {
         try (ObjectOutputStream salida = new ObjectOutputStream(
@@ -39,13 +44,14 @@ public class GestorPartida {
     public PartidaGuardada cargar(File archivo) {
         try (ObjectInputStream entrada = new ObjectInputStream(
                 new BufferedInputStream(new FileInputStream(archivo)))) {
+            entrada.setObjectInputFilter(ObjectInputFilter.Config.createFilter(FILTRO_DESERIALIZACION));
             return (PartidaGuardada) entrada.readObject();
         } catch (FileNotFoundException e) {
             System.out.println("No hay partida guardada: " + archivo.getPath()
                     + " no existe o no se puede abrir. Juega un combate para crearla.");
         } catch (InvalidClassException e) {
-            System.out.println("La partida guardada es de otra version del juego y no se puede cargar: "
-                    + e.getMessage());
+            System.out.println("La partida guardada es de otra version del juego o contiene clases no permitidas "
+                    + "y no se puede cargar: " + e.getMessage());
         } catch (EOFException | StreamCorruptedException e) {
             System.out.println("El archivo de partida esta corrupto o incompleto y no se puede cargar ("
                     + e.getClass().getSimpleName() + ")");
