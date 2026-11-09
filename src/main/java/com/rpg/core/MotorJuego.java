@@ -37,7 +37,7 @@ public class MotorJuego {
 
     private static final String NOMBRE_GREMIO = "Guardianes del Alba";
     private static final int CURACION_POCION_VIDA = 30;
-    private static final long INTERVALO_AUTOGUARDADO_MS = 5000;
+    private static final long INTERVALO_AUTOGUARDADO_MS = 120000;
     private static final long ESPERA_CIERRE_AUTOGUARDADO_MS = 2000;
     private static final int SEGUNDOS_TURNO = 10;
     private static final boolean AGREGAR_AL_LOG = true;
